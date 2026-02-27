@@ -25,6 +25,36 @@ A fully containerized video processing pipeline that transcodes a source MP4 fil
 
 ---
 
+## Project Structure
+
+```
+hls-streaming-pipeline/
+├── process.sh              # FFmpeg transcoding script (generates HLS renditions)
+├── docker-compose.yml      # Orchestrates processor + web server containers
+├── Dockerfile.nginx        # Builds the custom Nginx image
+├── nginx.conf              # Nginx config: CORS headers + HLS/DASH MIME types
+├── .env.example            # Sample environment variables (copy to .env)
+├── .gitignore
+├── README.md
+├── video/
+│   ├── README.txt          # Instructions for downloading source.mp4
+│   └── source.mp4          # ← Place your source video here (gitignored)
+└── media/                  # ← Gitignored; created at runtime by Docker
+    └── output/
+        ├── master.m3u8     # Top-level HLS master playlist
+        ├── 1080/
+        │   ├── stream.m3u8 # 1080p variant playlist
+        │   └── seg*.ts     # 6-second video segments
+        ├── 720/
+        │   ├── stream.m3u8 # 720p variant playlist
+        │   └── seg*.ts
+        └── 480/
+            ├── stream.m3u8 # 480p variant playlist
+            └── seg*.ts
+```
+
+---
+
 ## Quick Start
 
 ### Step 1: Clone the repository
