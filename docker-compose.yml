@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # processor: Runs the FFmpeg transcoding script once to generate HLS output.
+  # Uses the official jrottenberg/ffmpeg Docker image which bundles FFmpeg
+  # compiled with libx264, aac, and all required encoders.
+  # ---------------------------------------------------------------------------
+  processor:
+    image: jrottenberg/ffmpeg:4.4-alpine
+    entrypoint: /bin/sh
+    command: /app/process.sh
+    environment:
+      - SOURCE_VIDEO=${SOURCE_VIDEO:-/app/video/source.mp4}
+      - OUTPUT_DIR=${OUTPUT_DIR:-/app/media/output}
+      - SEGMENT_DURATION=${SEGMENT_DURATION:-6}
+    volumes:
+      - ./process.sh:/app/process.sh:ro        # Processing script (read-only)
+      - ./video:/app/video:ro                   # Source video directory (read-only)
+      - ./media:/app/media                       # Bind mount — writes directly to local ./media
+
+  # ---------------------------------------------------------------------------
+  # web_server: Serves the generated HLS files over HTTP via Nginx.
+  # Waits (via depends_on) for the processor service to complete first.
+  # ---------------------------------------------------------------------------
+  web_server:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    ports:
+      - "${HOST_PORT:-8080}:80"
+    volumes:
+      - ./media:/usr/share/nginx/html/media:ro      # Serve from local ./media (read-only)
+    depends_on:
+      - processor
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost/media/output/master.m3u8"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
