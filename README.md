@@ -116,8 +116,8 @@ curl -v http://localhost:8080/media/output/master.m3u8
 # Check a variant playlist
 curl -v http://localhost:8080/media/output/720/stream.m3u8
 
-# Check a segment file
-curl -v http://localhost:8080/media/output/480/seg000.ts -o /dev/null
+# Check a segment file (use -o NUL on Windows, -o /dev/null on Linux/macOS)
+curl -v http://localhost:8080/media/output/480/seg000.ts -o NUL
 ```
 
 ---
@@ -198,17 +198,17 @@ All configuration is done through environment variables. Copy `.env.example` to 
 ## Stopping the Pipeline
 
 ```bash
-# Stop containers (keep generated files)
+# Stop containers (keeps generated files in media/)
 docker-compose down
-
-# Stop and remove the shared volume (deletes generated HLS files)
-docker-compose down -v
 ```
 
-To re-run transcoding after deleting generated files:
+To force re-transcoding, delete the generated output and re-run:
 ```bash
-docker-compose down -v
-docker-compose up
+# Linux / macOS / WSL
+docker-compose down && rm -rf media/output/ && docker-compose up
+
+# Windows PowerShell
+docker-compose down; Remove-Item -Recurse -Force media\output; docker-compose up
 ```
 
 ---
